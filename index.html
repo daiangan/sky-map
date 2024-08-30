@@ -32,7 +32,11 @@
 </head>
 <body>
     <h2>Interactive Star Map</h2>
-    <p>Move your mouse over the map to see the coordinates.</p>
+    <p>
+        Move your mouse over the map to see the coordinates.
+        <br>
+        Click on any point to copy data to your clipboard.
+    </p>
     <div id="container" style="position:relative;">
         <img id="map" src="sky_map.png" alt="Star Map">
         <div id="tooltip" class="tooltip"></div>
@@ -44,6 +48,7 @@
     </div>
 
     <script>
+        let tooltipData = '';
         function toSexagesimal(decimal, isRA = true) {
             const sign = decimal < 0 ? -1 : 1;
             decimal = Math.abs(decimal);
@@ -97,16 +102,17 @@
             tooltip.innerHTML = `
                 RA [Decimal]: ${raDecimal.toFixed(2)}<br>
                 RA [Sexagesimal]: ${raSexagesimal}<br>
-                Declination [Decimal]: ${decDecimal.toFixed(2)}<br>
-                Declination [Sexagesimal]: ${decSexagesimal}
+                Dec [Decimal]: ${decDecimal.toFixed(2)}<br>
+                Dec [Sexagesimal]: ${decSexagesimal}
             `;
+            tooltipData = tooltip.innerHTML;
 
             // Adjust tooltip position relative to the container
             let x_adjust_pos = 10;
             let y_adjust_pos = 10;
 
             if (raDecimal < 12) {
-                x_adjust_pos = -250;
+                x_adjust_pos = -210;
             }
             if (decDecimal < 0) {
                 y_adjust_pos = -80;
@@ -117,8 +123,19 @@
             tooltip.style.display = "block";
         }
 
+        function copyToClipboard() {
+            const textarea = document.createElement('textarea');
+            tooltipData = tooltipData.replace(/^\s+/gm, '').replace(/<br>/g, '');
+            textarea.value = tooltipData;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+
         document.getElementById("map").addEventListener("click", function(event) {
             tooltipCalculator(this, event);
+            copyToClipboard();
         });
 
         document.getElementById("map").addEventListener("mousemove", function(event) {
