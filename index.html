@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Star Map</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fff;
+            color: black;
+            text-align: center;
+        }
+        #map {
+            max-width: 100%;
+            height: auto;
+            cursor: crosshair;
+            position: relative;
+        }
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 12px;
+            display: none;
+            pointer-events: none;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>Interactive Star Map</h1>
+    <p>Click on the map to see the coordinates.</p>
+    <div id="container" style="position:relative;">
+        <img id="map" src="sky_map.png" alt="Star Map">
+        <div id="tooltip" class="tooltip"></div>
+    </div>
+
+    <script>
+        function toSexagesimal(decimal, isRA = true) {
+            const sign = decimal < 0 ? -1 : 1;
+            decimal = Math.abs(decimal);
+            let hours = Math.floor(decimal);
+            let minutes = Math.floor((decimal - hours) * 60);
+            let seconds = ((decimal - hours) * 60 - minutes) * 60;
+
+            // Round seconds to two decimal places
+            seconds = Math.round(seconds * 100) / 100;
+
+            // Handle carry-over
+            if (seconds >= 60) {
+                seconds -= 60;
+                minutes += 1;
+            }
+            if (minutes >= 60) {
+                minutes -= 60;
+                hours += 1;
+            }
+            if (isRA && hours >= 24) {
+                hours -= 24;
+            }
+
+            if (isRA) {
+                return `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toFixed(2).padStart(5, '0')}s`;
+            } else {
+                return `${sign * hours}° ${minutes.toString().padStart(2, '0')}' ${seconds.toFixed(2).padStart(5, '0')}"`;
+            }
+        }
+
+        document.getElementById("map").addEventListener("click", function(event) {
+            const mapWidth = this.clientWidth;
+            const mapHeight = this.clientHeight;
+            const x = event.offsetX;
+            const y = event.offsetY;
+
+            // Calculate RA (23h to 0h, left to right)
+            let raDecimal = 23 - (x / mapWidth) * 23;
+            if (raDecimal < 0) raDecimal += 24; // Ensure RA is always positive
+
+            // Calculate Declination (+90° to -90°, top to bottom)
+            // Adjust the calculation to better match the expected range
+            const decDecimal = 90 - (y / mapHeight) * 180;
+
+            // Convert to sexagesimal
+            const raSexagesimal = toSexagesimal(raDecimal, true);
+            const decSexagesimal = toSexagesimal(decDecimal, false);
+
+            // Show tooltip with the values
+            const tooltip = document.getElementById("tooltip");
+            tooltip.innerHTML = `
+                RA [Decimal]: ${raDecimal.toFixed(2)}<br>
+                RA [Sexagesimal]: ${raSexagesimal}<br>
+                Declination [Decimal]: ${decDecimal.toFixed(2)}<br>
+                Declination [Sexagesimal]: ${decSexagesimal}
+            `;
+            // tooltip.style.left = `${event.pageX + 10}px`;
+            // tooltip.style.top = `${event.pageY + 10}px`;
+            // tooltip.style.display = "block";
+
+
+            // Adjust tooltip position relative to the container
+            tooltip.style.left = `${event.offsetX + 10}px`;
+            tooltip.style.top = `${event.offsetY + 10}px`;
+            tooltip.style.display = "block";
+        });
+
+        document.getElementById("map").addEventListener("mousemove", function(event) {
+            // const tooltip = document.getElementById("tooltip");
+            // if (tooltip.style.display === "block") {
+            //     tooltip.style.left = `${event.pageX + 10}px`;
+            //     tooltip.style.top = `${event.pageY + 10}px`;
+            // }
+
+            const mapWidth = this.clientWidth;
+            const mapHeight = this.clientHeight;
+            const x = event.offsetX;
+            const y = event.offsetY;
+
+            // Calculate RA (23h to 0h, left to right)
+            let raDecimal = 23 - (x / mapWidth) * 23;
+            if (raDecimal < 0) raDecimal += 24; // Ensure RA is always positive
+
+            // Calculate Declination (+90° to -90°, top to bottom)
+            // Adjust the calculation to better match the expected range
+            const decDecimal = 90 - (y / mapHeight) * 180;
+
+            // Convert to sexagesimal
+            const raSexagesimal = toSexagesimal(raDecimal, true);
+            const decSexagesimal = toSexagesimal(decDecimal, false);
+
+            // Show tooltip with the values
+            const tooltip = document.getElementById("tooltip");
+            tooltip.innerHTML = `
+                RA [Decimal]: ${raDecimal.toFixed(2)}<br>
+                RA [Sexagesimal]: ${raSexagesimal}<br>
+                Declination [Decimal]: ${decDecimal.toFixed(2)}<br>
+                Declination [Sexagesimal]: ${decSexagesimal}
+            `;
+            // tooltip.style.left = `${event.pageX + 10}px`;
+            // tooltip.style.top = `${event.pageY + 10}px`;
+            // tooltip.style.display = "block";
+
+            // Adjust tooltip position relative to the container
+            tooltip.style.left = `${event.offsetX + 20}px`;
+            tooltip.style.top = `${event.offsetY + 20}px`;
+            tooltip.style.display = "block";
+        });
+
+        document.getElementById("map").addEventListener("mouseleave", function() {
+            const tooltip = document.getElementById("tooltip");
+            tooltip.style.display = "none";
+        });
+    </script>
+</body>
+</html>
