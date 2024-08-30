@@ -11,19 +11,22 @@
             color: black;
             text-align: center;
         }
+
         #map {
             max-width: 100%;
             height: auto;
             cursor: crosshair;
             position: relative;
         }
+
         .tooltip {
             position: absolute;
             background-color: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 5px;
+            padding: 10px;
             border-radius: 5px;
-            font-size: 12px;
+            font-size: 14px;
+            line-height: 1.5;
             display: none;
             pointer-events: none;
             text-align: left;
@@ -31,121 +34,139 @@
     </style>
 </head>
 <body>
-    <h2>Interactive Star Map</h2>
-    <p>
-        Move your mouse over the map to see the coordinates.
-        <br>
-        Click on any point to copy data to your clipboard.
-    </p>
-    <div id="container" style="position:relative;">
-        <img id="map" src="sky_map.png" alt="Star Map">
-        <div id="tooltip" class="tooltip"></div>
-    </div>
-    <div>
-        <p>Image by: © Dominic Ford 2011–2024. Downloaded from <a href="https://in-the-sky.org/data/constellations_map.php" target="_blank">https://in-the-sky.org</a></p>
-        <p>Tool developed by <a href="https://github.com/daiangan" target="_blank">Daian Gan</a></p>
+<h2>Interactive Star Map</h2>
+<p>
+    Move your mouse over the map to see the coordinates.
+    <br>
+    Click on any point to copy data to your clipboard.
+</p>
+<div id="container" style="position:relative;">
+    <img id="map" src="sky_map.svg" alt="Star Map">
+<!--    <div id="overlay" style="position:absolute; top:17px; left:37px; width:calc(100% - 75px); height:calc(100% - 115px); background-color:rgba(0, 0, 0, 0.5);"></div>-->
+    <div id="tooltip" class="tooltip"></div>
+</div>
+<div>
+    <p>Tool developed by <a href="https://github.com/daiangan" target="_blank">Daian Gan</a></p>
 
-    </div>
+</div>
 
-    <script>
-        let tooltipData = '';
-        function toSexagesimal(decimal, isRA = true) {
-            const sign = decimal < 0 ? -1 : 1;
-            decimal = Math.abs(decimal);
-            let hours = Math.floor(decimal);
-            let minutes = Math.floor((decimal - hours) * 60);
-            let seconds = ((decimal - hours) * 60 - minutes) * 60;
+<script>
+    let tooltipData = '';
 
-            // Round seconds to two decimal places
-            seconds = Math.round(seconds * 100) / 100;
+    function toSexagesimal(decimal, isRA = true) {
+        const sign = decimal < 0 ? -1 : 1;
+        decimal = Math.abs(decimal);
+        let hours = Math.floor(decimal);
+        let minutes = Math.floor((decimal - hours) * 60);
+        let seconds = ((decimal - hours) * 60 - minutes) * 60;
 
-            // Handle carry-over
-            if (seconds >= 60) {
-                seconds -= 60;
-                minutes += 1;
-            }
-            if (minutes >= 60) {
-                minutes -= 60;
-                hours += 1;
-            }
-            if (isRA && hours >= 24) {
-                hours -= 24;
-            }
+        // Round seconds to two decimal places
+        seconds = Math.round(seconds * 100) / 100;
 
-            if (isRA) {
-                return `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toFixed(2).padStart(5, '0')}s`;
-            } else {
-                return `${sign * hours}° ${minutes.toString().padStart(2, '0')}' ${seconds.toFixed(2).padStart(5, '0')}"`;
-            }
+        // Handle carry-over
+        if (seconds >= 60) {
+            seconds -= 60;
+            minutes += 1;
+        }
+        if (minutes >= 60) {
+            minutes -= 60;
+            hours += 1;
+        }
+        if (isRA && hours >= 24) {
+            hours -= 24;
         }
 
-        function tooltipCalculator(thisRef, event) {
-            const mapWidth = thisRef.clientWidth;
-            const mapHeight = thisRef.clientHeight;
-            const x = event.offsetX;
-            const y = event.offsetY;
+        if (isRA) {
+            return `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toFixed(2).padStart(5, '0')}s`;
+        } else {
+            return `${sign * hours}° ${minutes.toString().padStart(2, '0')}' ${seconds.toFixed(2).padStart(5, '0')}"`;
+        }
+    }
 
-            // Calculate RA (23h to 0h, left to right)
-            let raDecimal = 24 - (x / mapWidth) * 24;
-            if (raDecimal < 0) raDecimal += 25; // Ensure RA is always positive
+    function tooltipCalculator(thisRef, event) {
+        // Calculate the relative offsets and dimensions based on the image dimensions
+        const xOffset = thisRef.clientWidth * 0.02991; // 37 / 1249
+        // const xOffset = thisRef.clientWidth * 0.03099; // 37 / 1249
+        const yOffset = thisRef.clientHeight * 0.0244; // 17 / 697
+        const xRightOffset = xOffset; // Same as left offset
+        const yBottomOffset = thisRef.clientHeight * 0.1349; // 94 / 697
 
-            // Calculate Declination (+90° to -90°, top to bottom)
-            // Adjust the calculation to better match the expected range
-            const decDecimal = 90 - (y / mapHeight) * 180;
+        const validWidth = thisRef.clientWidth - xOffset - xRightOffset;
+        const validHeight = thisRef.clientHeight - yOffset - yBottomOffset;
 
-            // Convert to sexagesimal
-            const raSexagesimal = toSexagesimal(raDecimal, true);
-            const decSexagesimal = toSexagesimal(decDecimal, false);
+        // Ensure x and y are within the bounds of the actual map area
+        const x = Math.min(Math.max(event.offsetX - xOffset, 0), validWidth);
+        const y = Math.min(Math.max(event.offsetY - yOffset, 0), validHeight);
 
-            // Show tooltip with the values
-            const tooltip = document.getElementById("tooltip");
-            tooltip.innerHTML = `
-                RA [Decimal]: ${raDecimal.toFixed(6)}<br>
-                RA [Sexagesimal]: ${raSexagesimal}<br>
-                Dec [Decimal]: ${decDecimal.toFixed(6)}<br>
-                Dec [Sexagesimal]: ${decSexagesimal}
-            `;
-            tooltipData = tooltip.innerHTML;
+        let raDecimal = 24 - (x / validWidth) * 24;
+        if (raDecimal < 0) raDecimal += 24; // Ensure RA is always positive
 
-            // Adjust tooltip position relative to the container
-            let x_adjust_pos = 10;
-            let y_adjust_pos = 10;
+        let decDecimal = 90 - (y / validHeight) * 180;
 
-            if (raDecimal < 12) {
-                x_adjust_pos = -210;
-            }
-            if (decDecimal < 0) {
-                y_adjust_pos = -80;
-            }
+        // Convert to sexagesimal
+        const raSexagesimal = toSexagesimal(raDecimal, true);
+        const decSexagesimal = toSexagesimal(decDecimal, false);
 
-            tooltip.style.left = `${event.offsetX + x_adjust_pos}px`;
-            tooltip.style.top = `${event.offsetY + y_adjust_pos}px`;
-            tooltip.style.display = "block";
+        // Update tooltip content
+        const tooltip = document.getElementById("tooltip");
+        tooltip.innerHTML = `
+            RA [Decimal]: ${raDecimal.toFixed(6)}<br>
+            RA [Sexagesimal]: ${raSexagesimal}<br>
+            Dec [Decimal]: ${decDecimal.toFixed(6)}<br>
+            Dec [Sexagesimal]: ${decSexagesimal}
+        `;
+        tooltipData = tooltip.innerHTML;
+
+        // Get the middle of the image
+        const midX = thisRef.clientWidth / 2;
+        const midY = thisRef.clientHeight / 2;
+
+        // Determine the quadrant and set tooltip position accordingly
+        if (event.offsetX < midX && event.offsetY < midY) {
+            // Top-left quadrant
+            tooltip.style.left = `${event.offsetX + xOffset}px`;
+            tooltip.style.top = `${event.offsetY + yOffset}px`;
+        } else if (event.offsetX >= midX && event.offsetY < midY) {
+            // Top-right quadrant
+            tooltip.style.left = `${event.offsetX - tooltip.clientWidth - xOffset}px`;
+            tooltip.style.top = `${event.offsetY + yOffset}px`;
+        } else if (event.offsetX < midX && event.offsetY >= midY) {
+            // Bottom-left quadrant
+            tooltip.style.left = `${event.offsetX + xOffset}px`;
+            tooltip.style.top = `${event.offsetY - tooltip.clientHeight - yOffset}px`;
+        } else if (event.offsetX >= midX && event.offsetY >= midY) {
+            // Bottom-right quadrant
+            tooltip.style.left = `${event.offsetX - tooltip.clientWidth - xOffset}px`;
+            tooltip.style.top = `${event.offsetY - tooltip.clientHeight - yOffset}px`;
         }
 
-        function copyToClipboard() {
-            const textarea = document.createElement('textarea');
-            tooltipData = tooltipData.replace(/^\s+/gm, '').replace(/<br>/g, '');
-            textarea.value = tooltipData;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-        }
+        // Always show the tooltip
+        tooltip.style.display = "block";
+    }
 
-        document.getElementById("map").addEventListener("click", function(event) {
-            tooltipCalculator(this, event);
-            copyToClipboard();
-        });
+    function copyToClipboard() {
+        const textarea = document.createElement('textarea');
+        tooltipData = tooltipData.replace(/^\s+/gm, '').replace(/<br>/g, '');
+        textarea.value = tooltipData;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+    }
 
-        document.getElementById("map").addEventListener("mousemove", function(event) {
-            tooltipCalculator(this, event);
-        });
+    document.getElementById("map").addEventListener("click", function (event) {
+        tooltipCalculator(this, event);
+        copyToClipboard();
+    });
 
-        document.getElementById("map").addEventListener("mouseleave", function() {
-            const tooltip = document.getElementById("tooltip");
-            tooltip.style.display = "none";
-        });
-    </script>
+    document.getElementById("map").addEventListener("mousemove", function (event) {
+        tooltipCalculator(this, event);
+    });
+
+    document.getElementById("map").addEventListener("mouseleave", function () {
+        const tooltip = document.getElementById("tooltip");
+        tooltip.style.display = "none";
+    });
+</script>
 </body>
 </html>
