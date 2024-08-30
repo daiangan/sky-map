@@ -31,11 +31,16 @@
     </style>
 </head>
 <body>
-    <h1>Interactive Star Map</h1>
-    <p>Click on the map to see the coordinates.</p>
+    <h2>Interactive Star Map</h2>
+    <p>Move your mouse over the map to see the coordinates.</p>
     <div id="container" style="position:relative;">
         <img id="map" src="sky_map.png" alt="Star Map">
         <div id="tooltip" class="tooltip"></div>
+    </div>
+    <div>
+        <p>Image by: © Dominic Ford 2011–2024. Downloaded from <a href="https://in-the-sky.org/data/constellations_map.php" target="_blank">https://in-the-sky.org</a></p>
+        <p>Tool developed by <a href="https://github.com/daiangan" target="_blank">Daian Gan</a></p>
+
     </div>
 
     <script>
@@ -69,9 +74,9 @@
             }
         }
 
-        document.getElementById("map").addEventListener("click", function(event) {
-            const mapWidth = this.clientWidth;
-            const mapHeight = this.clientHeight;
+        function tooltipCalculator(thisRef, event) {
+            const mapWidth = thisRef.clientWidth;
+            const mapHeight = thisRef.clientHeight;
             const x = event.offsetX;
             const y = event.offsetY;
 
@@ -95,57 +100,29 @@
                 Declination [Decimal]: ${decDecimal.toFixed(2)}<br>
                 Declination [Sexagesimal]: ${decSexagesimal}
             `;
-            // tooltip.style.left = `${event.pageX + 10}px`;
-            // tooltip.style.top = `${event.pageY + 10}px`;
-            // tooltip.style.display = "block";
-
 
             // Adjust tooltip position relative to the container
-            tooltip.style.left = `${event.offsetX + 10}px`;
-            tooltip.style.top = `${event.offsetY + 10}px`;
+            let x_adjust_pos = 10;
+            let y_adjust_pos = 10;
+
+            if (raDecimal < 12) {
+                x_adjust_pos = -250;
+            }
+            if (decDecimal < 0) {
+                y_adjust_pos = -80;
+            }
+
+            tooltip.style.left = `${event.offsetX + x_adjust_pos}px`;
+            tooltip.style.top = `${event.offsetY + y_adjust_pos}px`;
             tooltip.style.display = "block";
+        }
+
+        document.getElementById("map").addEventListener("click", function(event) {
+            tooltipCalculator(this, event);
         });
 
         document.getElementById("map").addEventListener("mousemove", function(event) {
-            // const tooltip = document.getElementById("tooltip");
-            // if (tooltip.style.display === "block") {
-            //     tooltip.style.left = `${event.pageX + 10}px`;
-            //     tooltip.style.top = `${event.pageY + 10}px`;
-            // }
-
-            const mapWidth = this.clientWidth;
-            const mapHeight = this.clientHeight;
-            const x = event.offsetX;
-            const y = event.offsetY;
-
-            // Calculate RA (23h to 0h, left to right)
-            let raDecimal = 23 - (x / mapWidth) * 23;
-            if (raDecimal < 0) raDecimal += 24; // Ensure RA is always positive
-
-            // Calculate Declination (+90° to -90°, top to bottom)
-            // Adjust the calculation to better match the expected range
-            const decDecimal = 90 - (y / mapHeight) * 180;
-
-            // Convert to sexagesimal
-            const raSexagesimal = toSexagesimal(raDecimal, true);
-            const decSexagesimal = toSexagesimal(decDecimal, false);
-
-            // Show tooltip with the values
-            const tooltip = document.getElementById("tooltip");
-            tooltip.innerHTML = `
-                RA [Decimal]: ${raDecimal.toFixed(2)}<br>
-                RA [Sexagesimal]: ${raSexagesimal}<br>
-                Declination [Decimal]: ${decDecimal.toFixed(2)}<br>
-                Declination [Sexagesimal]: ${decSexagesimal}
-            `;
-            // tooltip.style.left = `${event.pageX + 10}px`;
-            // tooltip.style.top = `${event.pageY + 10}px`;
-            // tooltip.style.display = "block";
-
-            // Adjust tooltip position relative to the container
-            tooltip.style.left = `${event.offsetX + 20}px`;
-            tooltip.style.top = `${event.offsetY + 20}px`;
-            tooltip.style.display = "block";
+            tooltipCalculator(this, event);
         });
 
         document.getElementById("map").addEventListener("mouseleave", function() {
