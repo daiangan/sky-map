@@ -81,8 +81,8 @@
             const y = event.offsetY;
 
             // Calculate RA (23h to 0h, left to right)
-            let raDecimal = 23 - (x / mapWidth) * 23;
-            if (raDecimal < 0) raDecimal += 24; // Ensure RA is always positive
+            let raDecimal = 24 - (x / mapWidth) * 24;
+            if (raDecimal < 0) raDecimal += 25; // Ensure RA is always positive
 
             // Calculate Declination (+90° to -90°, top to bottom)
             // Adjust the calculation to better match the expected range
