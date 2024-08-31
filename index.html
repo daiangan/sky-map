@@ -42,7 +42,7 @@
 </p>
 <div id="container" style="position:relative;">
     <img id="map" src="sky_map.svg" alt="Star Map">
-<!--    <div id="overlay" style="position:absolute; top:17px; left:37px; width:calc(100% - 75px); height:calc(100% - 115px); background-color:rgba(0, 0, 0, 0.5);"></div>-->
+    <!--    <div id="overlay" style="position:absolute; top:17px; left:37px; width:calc(100% - 75px); height:calc(100% - 115px); background-color:rgba(0, 0, 0, 0.5);"></div>-->
     <div id="tooltip" class="tooltip"></div>
 </div>
 <div>
@@ -83,10 +83,9 @@
         }
     }
 
-    function tooltipCalculator(thisRef, event) {
+    function tooltipCalculator(thisRef, event, eventType='mousemove') {
         // Calculate the relative offsets and dimensions based on the image dimensions
         const xOffset = thisRef.clientWidth * 0.02991; // 37 / 1249
-        // const xOffset = thisRef.clientWidth * 0.03099; // 37 / 1249
         const yOffset = thisRef.clientHeight * 0.0244; // 17 / 697
         const xRightOffset = xOffset; // Same as left offset
         const yBottomOffset = thisRef.clientHeight * 0.1349; // 94 / 697
@@ -115,7 +114,10 @@
             Dec [Decimal]: ${decDecimal.toFixed(6)}<br>
             Dec [Sexagesimal]: ${decSexagesimal}
         `;
-        tooltipData = tooltip.innerHTML;
+        if (eventType === 'click') {
+            tooltipData = tooltip.innerHTML;
+            tooltip.innerHTML += `<br><br>COPIED TO CLIPBOARD!`;
+        }
 
         // Get the middle of the image
         const midX = thisRef.clientWidth / 2;
@@ -124,19 +126,19 @@
         // Determine the quadrant and set tooltip position accordingly
         if (event.offsetX < midX && event.offsetY < midY) {
             // Top-left quadrant
-            tooltip.style.left = `${event.offsetX + xOffset}px`;
+            tooltip.style.left = `${event.clientX + yOffset}px`;
             tooltip.style.top = `${event.offsetY + yOffset}px`;
         } else if (event.offsetX >= midX && event.offsetY < midY) {
             // Top-right quadrant
-            tooltip.style.left = `${event.offsetX - tooltip.clientWidth - xOffset}px`;
+            tooltip.style.left = `${event.clientX - tooltip.offsetWidth - yOffset}px`;
             tooltip.style.top = `${event.offsetY + yOffset}px`;
         } else if (event.offsetX < midX && event.offsetY >= midY) {
             // Bottom-left quadrant
-            tooltip.style.left = `${event.offsetX + xOffset}px`;
+            tooltip.style.left = `${event.clientX + yOffset}px`;
             tooltip.style.top = `${event.offsetY - tooltip.clientHeight - yOffset}px`;
         } else if (event.offsetX >= midX && event.offsetY >= midY) {
             // Bottom-right quadrant
-            tooltip.style.left = `${event.offsetX - tooltip.clientWidth - xOffset}px`;
+            tooltip.style.left = `${event.clientX - tooltip.offsetWidth - yOffset}px`;
             tooltip.style.top = `${event.offsetY - tooltip.clientHeight - yOffset}px`;
         }
 
@@ -155,7 +157,7 @@
     }
 
     document.getElementById("map").addEventListener("click", function (event) {
-        tooltipCalculator(this, event);
+        tooltipCalculator(this, event, 'click');
         copyToClipboard();
     });
 
